@@ -2,9 +2,9 @@ package db
 
 import (
 	"fmt"
+	"log"
 
 	"gitlab.com/veeery/gdi_echo_golang.git/config"
-	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -26,14 +26,14 @@ func Init() {
 	if err != nil {
 		panic("DB Connection Error")
 	}
-	gormDB.AutoMigrate(&model.User{})
-	// for _, model := range MigrateTable() {
-	// 	err := gormDB.Debug().AutoMigrate(model.Table)
+	
+	for _, model := range MigrateTable() {
+		err := gormDB.Debug().AutoMigrate(model.Table)
 
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 }
 
