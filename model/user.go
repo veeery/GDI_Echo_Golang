@@ -3,22 +3,26 @@ package model
 import (
 	"os"
 
-	"github.com/golang-jwt/jwt"
+	// jwt "github.com/dgrijalva/jwt-go"
+
+	jwt "github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type User struct {
-	IdUser   int    `gorm:"AUTO_INCREMENT;PRIMARY_KEY;not null" json:"id_user"`
-	Name     string `gorm:"type:varchar(225)" json:"name"`
-	Email    string `gorm:"type:varchar(255)" json:"email"`
-	// Hp       string `gorm:"type:varchar(20)" json:"hp"`
-	Password string `gorm:"->;<-;not null" json:"-"`
-	// Token string `gorm:"-" json:"token,omitempty"`
-}
 
 var (
 	jwtKey = os.Getenv("JWT_KEY")
 )
+
+type User struct {
+	IdUser    uint32   `gorm:"AUTO_INCREMENT;PRIMARY_KEY;not null" json:"id_user"`
+	FirstName string   `gorm:"type:varchar(100);not null;" json:"first_name"`
+	LastName  string   `gorm:"type:varchar(100)" json:"last_name"`
+	Email     string   `gorm:"type:varchar(255);not null; index" json:"email"`
+	Hp        string   `gorm:"type:varchar(20);not null; index" json:"hp" `
+	Password  string   `gorm:"type:varchar(100);not null" json:"-"`
+	// Token    string   `gorm:"-" json:"token,omitempty"`
+}
+
 
 func (user *User) HashPassword() {
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -27,7 +31,7 @@ func (user *User) HashPassword() {
 
 func (user *User) GenerateToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"IdUser": user.IdUser,
+		"Email": user.Email,
 	})
 
 	tokenString, err := token.SignedString(jwtKey)

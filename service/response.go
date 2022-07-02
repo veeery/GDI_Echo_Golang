@@ -1,7 +1,9 @@
 package service
 
+import "strings"
+
 type ResponseError struct {
-	Message string `json:"message"`
+	Message interface{} `json:"message"`
 	// Errors  interface{} `json:"errors_hint"`
 }
 
@@ -25,10 +27,11 @@ func BuildResponse(message string, data interface{}) ResponseSuccess {
 }
 
 func BuildErrorResponse(err string) ResponseError {
-	// splittedError := strings.Split(err, "\n")
+	split := strings.ReplaceAll(err, ";", "\n") 
+	splittedError := strings.Split(split, "\n")
+	
 	res := ResponseError{
-		Message: err,
-		// Errors: splittedError,
+		Message: splittedError,
 	}
 	return res
 }
