@@ -16,10 +16,10 @@ func main() {
 
 	serverUrl := baseUrl + ver + "/"
 
+	
 	authRoute := e.Group(serverUrl+"auth") 
 	{
 		authRoute.GET("/users", api.GetUsers)
-		authRoute.POST("/create", api.CreateUsers) 
 		authRoute.POST("/register", api.Register)
 		// authRoute.DELETE("/remove", api.DeleteUsers)
 		// authRoute.POST("/login", api.Login)

@@ -1,6 +1,6 @@
 package utils
 
-func ShorcutMessage(columnName string) string {
-	s := columnName + " Already Have"
+func ShorcutIsTaken(data string) string {
+	s := data + " is Already Taken"
 	return s
 }
