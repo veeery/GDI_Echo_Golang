@@ -61,9 +61,8 @@ func Login(c echo.Context) error {
 func Register(c echo.Context) error {
 	
 	db := db.DbManager()
-
 	var register auth.RegisterUser
-	
+
 	errDTO := c.Bind(&register)
 
 	if errDTO != nil {
@@ -78,16 +77,21 @@ func Register(c echo.Context) error {
 	}
 
 	
-    err := db.Where("email = ?", register.Email).First(&model.User{}).Error
-	if err == nil {
-		res := service.BuildErrorResponse(err.Error() ,utils.ShorcutIsExists("Email"))
+    errEmail := db.Where("email = ?", register.Email).First(&model.User{}).Error
+	if errEmail == nil {
+		res := service.BuildErrorResponse(errEmail.Error() ,utils.ShorcutIsExists("Email"))
 		return c.JSON(409, res)
 	} 
 
-	er := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
-	if er == nil {
-		res := service.BuildErrorResponse(er.Error(), utils.ShorcutIsExists("Phone number"))
+	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
+	if errHp == nil {
+		res := service.BuildErrorResponse(errHp.Error(), utils.ShorcutIsExists("Phone number"))
 		return c.JSON(409, res)
+	}
+
+	if (register.Password != register.ConfirmPassword) {
+		res := service.BuildErrorResponse("Password are not same", utils.ShorcutValidationError())
+		return c.JSON(400, res)
 	}
 
 	user := model.User{
