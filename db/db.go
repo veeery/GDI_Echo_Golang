@@ -27,6 +27,7 @@ func Init() {
 		panic("DB Connection Error")
 	}
 	
+
 	for _, model := range MigrateTable() {
 		err := gormDB.Debug().AutoMigrate(model.Table)
 
