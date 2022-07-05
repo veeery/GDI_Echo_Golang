@@ -12,6 +12,10 @@ type ResponseSuccess struct {
 	Data    interface{} `json:"data"`
 }
 
+type ResponseOnlyMessage struct {
+	Message string `json:"message"`
+}
+
 type EmptyResponse struct{}
 
 func BuildResponse(message string, data interface{}) ResponseSuccess {
@@ -29,6 +33,13 @@ func BuildErrorResponse(err, message string) ResponseError {
 	res := ResponseError{
 		Message: message,
 		Data: splittedError,
+	}
+	return res
+}
+
+func BuildResponseOnlyMessage(m string) ResponseOnlyMessage {
+	res := ResponseOnlyMessage{
+		Message: m,
 	}
 	return res
 }

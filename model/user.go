@@ -31,6 +31,14 @@ func (user *User) HashPassword() {
 	user.Password = string(bytes)
 }
 
+func (user *User) CheckPassword(providedPassword string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(providedPassword))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (user *User) GenerateToken() (string, error) {
 	claims := &JwtCustomClaims{
 		jwt.StandardClaims{
@@ -44,10 +52,23 @@ func (user *User) GenerateToken() (string, error) {
 	return t, err
 }
 
-func (user *User) CheckPassword(providedPassword string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(providedPassword))
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func ValidateToken(signedToken string) (err error) {
+// 	token, err := jwt.ParseWithClaims(
+// 		signedToken,
+// 		&JwtCustomClaims{},
+// 		func(t *jwt.Token) (interface{}, error) {
+// 			return []byte(jwtKey), nil
+// 		},
+// 	)
+
+// 	claims, ok := token.Claims.(*JwtCustomClaims)
+// 	if !ok {
+// 		err = errors.New("Cant parse claims")
+// 		return
+// 	}
+// 	if claims.ExpiresAt < time.Now().Local().Unix() {
+// 		err = errors.New("token expired")
+// 		return
+// 	}
+// 	return
+// }

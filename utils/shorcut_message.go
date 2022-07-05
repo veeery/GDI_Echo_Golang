@@ -19,3 +19,8 @@ func ShorcutInvalidPassword() string {
 	s := "Password Invalid"
 	return s
 }
+
+func ShorcutUnAuthorization() string {
+	s := "Request Unauthorized"
+	return s
+}

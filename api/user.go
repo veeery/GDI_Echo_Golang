@@ -59,9 +59,9 @@ func Login(c echo.Context) error {
 }
 
 func Register(c echo.Context) error {
-	
-	db := db.DbManager()
+
 	var register auth.RegisterUser
+	db := db.DbManager()
 
 	errDTO := c.Bind(&register)
 
@@ -76,16 +76,15 @@ func Register(c echo.Context) error {
 		return c.JSON(409, res)
 	}
 
-	
-    errEmail := db.Where("email = ?", register.Email).First(&model.User{}).Error
-	if errEmail == nil {
-		res := service.BuildErrorResponse(errEmail.Error() ,utils.ShorcutIsExists("Email"))
+    err := db.Where("email = ?", register.Email).First(&model.User{}).Error
+	if err == nil {
+		res := service.BuildResponseOnlyMessage(utils.ShorcutIsExists("Email"))
 		return c.JSON(409, res)
 	} 
-
+	
 	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
 	if errHp == nil {
-		res := service.BuildErrorResponse(errHp.Error(), utils.ShorcutIsExists("Phone number"))
+		res := service.BuildResponseOnlyMessage(utils.ShorcutIsExists("Phone number"))
 		return c.JSON(409, res)
 	}
 
