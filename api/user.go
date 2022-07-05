@@ -14,6 +14,50 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/utils"
 )
 
+func Login(c echo.Context) error {
+
+	var user model.User
+	var userLogin auth.LoginUser
+	db := db.DbManager()
+
+	errBind := c.Bind(&userLogin)
+	if errBind != nil {
+		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Login")
+		return c.JSON(400, res)
+	}
+	
+	if errExists := db.Where("email = ?", userLogin.Email).First(&user).Error; errExists != nil {
+		res := service.BuildErrorResponse(errExists.Error(), utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+
+	errPassword := user.CheckPassword(userLogin.Password)
+	if errPassword != nil {
+		res := service.BuildErrorResponse(utils.ShorcutInvalidPassword(), utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+
+	token, err := user.GenerateToken()
+	if err != nil {
+		return err
+	}
+
+	var cookie http.Cookie
+
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
+
+	c.SetCookie(&cookie)
+
+	return c.JSON(200, echo.Map{
+		"message": "Successfully login",
+		"token": token,
+		"data": user,
+	})
+
+}
+
 func Register(c echo.Context) error {
 	
 	db := db.DbManager()
@@ -23,25 +67,26 @@ func Register(c echo.Context) error {
 	errDTO := c.Bind(&register)
 
 	if errDTO != nil {
-		response := service.BuildErrorResponse(errDTO.Error())
+		response := service.BuildErrorResponse(errDTO.Error(), utils.ShorcutValidationError())
 		return c.JSON(400, response)
 	}
 
 	_, v := govalidator.ValidateStruct(&register)
 	if v != nil {
-		res := service.BuildErrorResponse(v.Error())
+		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	}
+
 	
     err := db.Where("email = ?", register.Email).First(&model.User{}).Error
 	if err == nil {
-		res := service.BuildCustomErrorResponse(utils.ShorcutIsTaken(register.Email))
+		res := service.BuildErrorResponse(err.Error() ,utils.ShorcutIsExists("Email"))
 		return c.JSON(409, res)
 	} 
 
 	er := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
 	if er == nil {
-		res := service.BuildCustomErrorResponse(utils.ShorcutIsTaken(register.Hp))
+		res := service.BuildErrorResponse(er.Error(), utils.ShorcutIsExists("Phone number"))
 		return c.JSON(409, res)
 	}
 
@@ -56,18 +101,8 @@ func Register(c echo.Context) error {
 	user.HashPassword()
 	db.Create(&user)
 
-	token, _:= user.GenerateToken()
-
-	var cookie http.Cookie
-
-	cookie.Name = "token"
-	cookie.Value = token
-	cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
-
-	c.SetCookie(&cookie)
-
 	return c.JSON(201, echo.Map{
-		"token": token,
+		"message": utils.ShorcutSuccessfulyCreated("Users"),
 		"user": user,
 	})
 

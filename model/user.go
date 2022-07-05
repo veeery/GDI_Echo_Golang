@@ -2,10 +2,9 @@ package model
 
 import (
 	"os"
+	"time"
 
-	// jwt "github.com/dgrijalva/jwt-go"
-
-	jwt "github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,6 +22,9 @@ type User struct {
 	// Token    string   `gorm:"-" json:"token,omitempty"`
 }
 
+type JwtCustomClaims struct{
+	jwt.StandardClaims
+}
 
 func (user *User) HashPassword() {
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -30,10 +32,22 @@ func (user *User) HashPassword() {
 }
 
 func (user *User) GenerateToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"Email": user.Email,
-	})
+	claims := &JwtCustomClaims{
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+		},
+	}
 
-	tokenString, err := token.SignedString(jwtKey)
-	return tokenString, err
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	t, err := token.SignedString([]byte("secret"))
+
+	return t, err
+}
+
+func (user *User) CheckPassword(providedPassword string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(providedPassword))
+	if err != nil {
+		return err
+	}
+	return nil
 }
