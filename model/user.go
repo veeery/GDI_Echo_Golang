@@ -1,15 +1,11 @@
 package model
 
 import (
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"gitlab.com/veeery/gdi_echo_golang.git/utils"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	jwtKey = os.Getenv("JWT_KEY")
 )
 
 type User struct {
@@ -23,6 +19,7 @@ type User struct {
 }
 
 type JwtCustomClaims struct{
+	Email string `json:"email"`
 	jwt.StandardClaims
 }
 
@@ -40,35 +37,49 @@ func (user *User) CheckPassword(providedPassword string) error {
 }
 
 func (user *User) GenerateToken() (string, error) {
+
 	claims := &JwtCustomClaims{
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+		Email: user.Email,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())).Unix(),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte("secret"))
+	t, err := token.SignedString([]byte(utils.SignedToken()))
 
 	return t, err
 }
 
-// func ValidateToken(signedToken string) (err error) {
-// 	token, err := jwt.ParseWithClaims(
-// 		signedToken,
-// 		&JwtCustomClaims{},
-// 		func(t *jwt.Token) (interface{}, error) {
-// 			return []byte(jwtKey), nil
-// 		},
-// 	)
+func (user *User) GenerateRefreshToken() (string, error) {
+	refreshToken := &jwt.MapClaims{}
 
-// 	claims, ok := token.Claims.(*JwtCustomClaims)
-// 	if !ok {
-// 		err = errors.New("Cant parse claims")
-// 		return
-// 	}
-// 	if claims.ExpiresAt < time.Now().Local().Unix() {
-// 		err = errors.New("token expired")
-// 		return
-// 	}
-// 	return
-// }
+	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshToken)
+	t, err := rt.SignedString([]byte(utils.SignedToken()))
+
+	return t, err
+
+}
+
+func ValidateToken(signedToken string) (t string,err error) {
+
+	tokenString := signedToken
+	claims := jwt.MapClaims{}
+
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(t *jwt.Token) (interface{}, error) {
+			return []byte(utils.SignedToken()), nil
+		})
+	
+	if token.Valid != true {
+		
+	}
+	
+	// for key, val := range claims {
+	// 	fmt.Printf("Key: %v, value: %v\n", key, val)
+	// }
+	// fmt.Print(token)
+	return t, err
+}

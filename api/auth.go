@@ -42,18 +42,27 @@ func Login(c echo.Context) error {
 		return err
 	}
 
-	var cookie http.Cookie
+	// refreshToken, errRefresh := user.GenerateRefreshToken()
+	// if errRefresh != nil {
+	// 	return err
+	// }
 
-	cookie.Name = "token"
-	cookie.Value = token
-	cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
-
-	c.SetCookie(&cookie)
+	c.SetCookie(&http.Cookie{
+		Name: "token",
+		Value: token,
+		Expires: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())),
+	})
 
 	return c.JSON(200, echo.Map{
 		"message": "Successfully login",
-		"token": token,
-		"data": user,
+		"data": echo.Map{
+			"token": echo.Map{
+				"access_token": token,
+				"type": "jwt",
+				"expired": utils.ExpiredTokenTime(),
+			},
+			"data": user,
+		},
 	})
 
 }
@@ -108,7 +117,23 @@ func Register(c echo.Context) error {
 		"message": utils.ShorcutSuccessfulyCreated("Users"),
 		"user": user,
 	})
+}
 
+func Logout(c echo.Context) error {
+	
+	// see https://golang.org/pkg/net/http/#Cookie
+ 	// Setting MaxAge<0 means delete cookie now.
+	cookie := http.Cookie{
+		Name: "token",
+		MaxAge: -1,
+	} 
+	
+	
+
+	c.SetCookie(&cookie)
+	
+	res := service.BuildResponseOnlyMessage("Successfully Log out")
+	return c.JSON(200, res)
 }
 
 func GetUsers(c echo.Context) error {
