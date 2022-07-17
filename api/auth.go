@@ -121,19 +121,19 @@ func Register(c echo.Context) error {
 
 func Logout(c echo.Context) error {
 	
-	// see https://golang.org/pkg/net/http/#Cookie
  	// Setting MaxAge<0 means delete cookie now.
 	cookie := http.Cookie{
 		Name: "token",
+		Value: "",
+		Expires: time.Now().Add(-time.Hour),
 		MaxAge: -1,
 	} 
-	
-	
 
 	c.SetCookie(&cookie)
 	
 	res := service.BuildResponseOnlyMessage("Successfully Log out")
 	return c.JSON(200, res)
+
 }
 
 func GetUsers(c echo.Context) error {

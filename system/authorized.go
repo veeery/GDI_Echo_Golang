@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"gitlab.com/veeery/gdi_echo_golang.git/db"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
 	"gitlab.com/veeery/gdi_echo_golang.git/utils"
@@ -27,17 +28,35 @@ func AuthMiddleware() echo.MiddlewareFunc {
 				return c.JSON(401, res)
 			}
 
-			_, err := model.ValidateToken(splitToken)
+			token, err := model.ValidateToken(splitToken)
 
 			if err != nil {
 				res := service.BuildErrorResponse(err.Error(), err.Error())
 				return c.JSON(401, res)
 			}
 			
-			c.Set("user", model.User{})
+			c.Set("user", model.User{Email: token})
 
 			return next(c)
 
 		}
 	}
+}
+
+func DeleteAuth(c echo.Context, email string) error {
+	db := db.DbManager()
+
+	errBind	:= c.Bind(&email)
+	if errBind != nil {
+		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Login")
+		return c.JSON(400, res)
+	}
+
+	// fmt.Println(db.Where("email = ?", email).Take(&model.User{}).Delete(&model.User{}).Error)
+
+	if errDeleteAuth := db.Where("email = ?", email).Take(&model.User{}).Delete(&model.User{}).Error; errDeleteAuth != nil {
+		res := service.BuildErrorResponse(errDeleteAuth.Error(), utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+	return nil
 }

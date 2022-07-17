@@ -5,6 +5,6 @@ func SignedToken() string {
 	return a
 }
 func ExpiredTokenTime() int {
-	i := 2000
+	i := 5
 	return i
 }
