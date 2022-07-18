@@ -51,36 +51,6 @@ func (user *User) GenerateToken() (string, error) {
 	return t, err
 }
 
-func (user *User) GenerateRefreshToken() (string, error) {
-	refreshToken := &jwt.MapClaims{}
-
-	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshToken)
-	t, err := rt.SignedString([]byte(utils.SignedToken()))
-
-	return t, err
-
-}
-
-// func RefreshToken(next echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-// 		if c.Get("user") == nil {
-// 			return next(c)
-// 		}
-// 		u := c.Get("user").(jwt.Token)
-// 		claims := u.Claims.(*JwtCustomClaims)
-		
-// 		if time.Unix(claims.ExpiresAt.ExpiresAt, 0).Sub(time.Now()) < 15 * time.Minute {
-// 			rc, err := c.Cookie()
-// 			if err == nil && rc != nil {
-// 				tkn, err := jwt.ParseWithClaims(rc.Value, claims, func(t *jwt.Token) (interface{}, error) {
-// 					return []byte()
-// 				})
-// 			}
-// 		}
-
-// 	}
-// }
-
 func ValidateToken(signedToken string) (email string,err error) {
 
 	tokenString := signedToken
@@ -97,7 +67,6 @@ func ValidateToken(signedToken string) (email string,err error) {
 		email = claims["email"].(string)
 		// fmt.Println(claims["email"])
 	}
-	
 	
 	// for key, val := range claims {
 	// 	fmt.Printf("Key: %v, value: %v\n", key, val)

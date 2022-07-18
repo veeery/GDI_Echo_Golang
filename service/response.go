@@ -26,12 +26,12 @@ func BuildResponse(message string, data interface{}) ResponseSuccess {
 	return res
 }
 
-func BuildErrorResponse(err, message string) ResponseError {
+func BuildErrorResponse(err, titleMessage string) ResponseError {
 	split := strings.ReplaceAll(err, ";", "\n") 
 	splittedError := strings.Split(split, "\n")
 	
 	res := ResponseError{
-		Message: message,
+		Message: titleMessage,
 		Data: splittedError,
 	}
 	return res

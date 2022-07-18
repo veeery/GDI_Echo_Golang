@@ -24,7 +24,7 @@ func Init() {
 	gormDB, err  = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		fmt.Println("GAGAL DB")
+		fmt.Println("Gagal Koneksi DB")
 		panic("DB Connection Error")
 	}
 	

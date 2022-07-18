@@ -11,6 +11,7 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
+	"gitlab.com/veeery/gdi_echo_golang.git/system"
 	"gitlab.com/veeery/gdi_echo_golang.git/utils"
 )
 
@@ -41,11 +42,6 @@ func Login(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
-	// refreshToken, errRefresh := user.GenerateRefreshToken()
-	// if errRefresh != nil {
-	// 	return err
-	// }
 
 	c.SetCookie(&http.Cookie{
 		Name: "token",
@@ -87,18 +83,18 @@ func Register(c echo.Context) error {
 
     err := db.Where("email = ?", register.Email).First(&model.User{}).Error
 	if err == nil {
-		res := service.BuildResponseOnlyMessage(utils.ShorcutIsExists("Email"))
+		res := service.BuildErrorResponse(utils.ShorcutIsExists("Email"), utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	} 
 	
 	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
 	if errHp == nil {
-		res := service.BuildResponseOnlyMessage(utils.ShorcutIsExists("Phone number"))
+		res := service.BuildErrorResponse(utils.ShorcutIsExists("Phone Number"), utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	}
 
 	if (register.Password != register.ConfirmPassword) {
-		res := service.BuildErrorResponse("Password are not same", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}
 
@@ -152,3 +148,43 @@ func DeleteUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
+func RefreshToken(c echo.Context) error {
+
+	var user model.User
+	db := db.DbManager()
+	dataEmail := system.GetDataCookieToken(c)
+
+	errBind := c.Bind(&dataEmail)
+	if errBind != nil {
+		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Refresh")
+		return c.JSON(400, res)
+	}
+
+	if errRefresh := db.Where("email = ?", dataEmail).First(&user).Error; errRefresh != nil {
+		res := service.BuildErrorResponse(errRefresh.Error(), utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+
+	token, err := user.GenerateToken()
+	if err != nil {
+		return err
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name: "token",
+		Value: token,
+		Expires: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())),
+	})
+
+	return c.JSON(200, echo.Map{
+		"message": "Successfully Refresh",
+		"data": echo.Map{
+			"token": echo.Map{
+				"access_token": token,
+				"type": "jwt",
+				"expired": utils.ExpiredTokenTime(),
+			},
+			"data": user,
+		},
+	})
+}

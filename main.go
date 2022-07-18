@@ -17,7 +17,7 @@ func main() {
 	ver := "v1"
 
 	serverUrl := baseUrl + ver + "/"
-
+	
 	firstRoute := e.Group(serverUrl+"auth")
 	{
 		firstRoute.POST("/register", api.Register)
@@ -29,6 +29,7 @@ func main() {
 	{
 		authRoute.GET("/users", api.GetUsers)
 		authRoute.POST("/logout", api.Logout)
+		authRoute.POST("/refresh", api.RefreshToken)
 	}	
 
 	

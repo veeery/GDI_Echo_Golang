@@ -1,6 +1,7 @@
 package system
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -31,7 +32,7 @@ func AuthMiddleware() echo.MiddlewareFunc {
 			token, err := model.ValidateToken(splitToken)
 
 			if err != nil {
-				res := service.BuildErrorResponse(err.Error(), err.Error())
+				res := service.BuildErrorResponse(err.Error(), utils.ShorcutValidationError())
 				return c.JSON(401, res)
 			}
 			
@@ -59,4 +60,19 @@ func DeleteAuth(c echo.Context, email string) error {
 		return c.JSON(400, res)
 	}
 	return nil
+}
+
+func GetDataCookieToken(c echo.Context) (data string) {
+
+	cookie := c.Get("user")
+	dataCookie := fmt.Sprintf("%v", cookie)
+
+	removeBool := strings.Replace(dataCookie, "0", "", -1)
+	leftRemove := strings.ReplaceAll(removeBool, "{", "")
+	rightRemove := strings.ReplaceAll(leftRemove, "}", "")
+	removeWhiteSpace := strings.ReplaceAll(rightRemove, " ", "")
+
+	data = removeWhiteSpace
+
+	return data
 }

@@ -4,7 +4,9 @@ func SignedToken() string {
 	a := "secret"
 	return a
 }
+
 func ExpiredTokenTime() int {
-	i := 5
+	//36.000 detik = 10 jam
+	i := 36000
 	return i
 }
