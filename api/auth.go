@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/veeery/gdi_echo_golang.git/controller/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
+	"gitlab.com/veeery/gdi_echo_golang.git/db/table"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
 	"gitlab.com/veeery/gdi_echo_golang.git/system"
@@ -77,7 +78,7 @@ func Register(c echo.Context) error {
 
 	_, v := govalidator.ValidateStruct(&register)
 	if v != nil {
-		res := service.BuildErrorResponse("Password Must Be 6 Character", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	}
 
@@ -193,7 +194,6 @@ func ChangePassword(c echo.Context) error {
 		return c.JSON(409, res)
 	}
 
-
 	if (password != confirmPassword) {
 		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
 		return c.JSON(400, res)
@@ -201,7 +201,7 @@ func ChangePassword(c echo.Context) error {
 	
 	NewHashPassword := model.HashPasswordUpdate(password)
 
-	if err := db.Table("users").Where("id_user", id).Update("password", NewHashPassword).Error; err != nil {
+	if err := db.Table(table.User()).Where("id_user", id).Update("password", NewHashPassword).Error; err != nil {
 		res := service.BuildErrorResponse("Failed to Change Password", utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}

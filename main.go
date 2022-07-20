@@ -12,11 +12,13 @@ func main() {
 
 	e := echo.New()
 	e.Use(system.ServerHeader)
-	
-	baseUrl := "api/"
+
+
+	apiUrl := "api/"
+	baseUrl := ""
 	ver := "v1"
 
-	serverUrl := baseUrl + ver + "/"
+	serverUrl := apiUrl + baseUrl + ver + "/"
 	
 	firstRoute := e.Group(serverUrl+"auth")
 	{
