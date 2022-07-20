@@ -28,3 +28,9 @@ func ShorcutSuccessfulyCreated(data string) string {
 	return s
 }
 
+func ShorcutSuccessfulyWithParam(typeSucessfully string) string {
+	s := "Successfully " + typeSucessfully
+	return s
+}
+
+

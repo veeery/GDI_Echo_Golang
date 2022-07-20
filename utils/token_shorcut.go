@@ -6,7 +6,7 @@ func SignedToken() string {
 }
 
 func ExpiredTokenTime() int {
-	//36.000 detik = 10 jam
-	i := 36000
+	//900 detik = 15 menit
+	i := 900
 	return i
 }

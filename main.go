@@ -27,12 +27,10 @@ func main() {
 	authRoute := e.Group(serverUrl+"auth")
 	authRoute.Use(system.AuthMiddleware()) 
 	{
-		authRoute.GET("/users", api.GetUsers)
-		authRoute.POST("/logout", api.Logout)
+		authRoute.DELETE("/logout", api.Logout)
 		authRoute.POST("/refresh", api.RefreshToken)
+		authRoute.PATCH("/change-password/:id", api.ChangePassword)
 	}	
 
-	
-	
 	e.Logger.Fatal(e.Start(":8000"))
 }

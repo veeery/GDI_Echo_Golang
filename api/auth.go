@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -60,7 +61,6 @@ func Login(c echo.Context) error {
 			"data": user,
 		},
 	})
-
 }
 
 func Register(c echo.Context) error {
@@ -77,7 +77,7 @@ func Register(c echo.Context) error {
 
 	_, v := govalidator.ValidateStruct(&register)
 	if v != nil {
-		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Password Must Be 6 Character", utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	}
 
@@ -127,25 +127,8 @@ func Logout(c echo.Context) error {
 
 	c.SetCookie(&cookie)
 	
-	res := service.BuildResponseOnlyMessage("Successfully Log out")
+	res := service.BuildResponseOnlyMessage(utils.ShorcutSuccessfulyWithParam("Log Out"))
 	return c.JSON(200, res)
-
-}
-
-func GetUsers(c echo.Context) error {
-	db := db.DbManager()
-	users := []model.User{}
-
-    db.Find(&users)
-	return c.JSON(http.StatusOK, users)
-}
-
-func DeleteUsers(c echo.Context) error {
-	db := db.DbManager()
-	users := []model.User{}
-
-	db.Delete(&users)
-	return c.JSON(http.StatusOK, users)
 }
 
 func RefreshToken(c echo.Context) error {
@@ -187,4 +170,44 @@ func RefreshToken(c echo.Context) error {
 			"data": user,
 		},
 	})
+}
+
+func ChangePassword(c echo.Context) error {
+
+	db := db.DbManager()
+	
+	errBind := c.Bind(&auth.UpdatePassword{})
+	if errBind != nil {
+		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Change Password")
+		return c.JSON(400, res)
+	}	
+	
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	password := c.FormValue("password")
+	confirmPassword := c.FormValue("confirm_password")
+
+	_, v := govalidator.ValidateStruct(&auth.UpdatePassword{Password: password, ConfirmPassword: confirmPassword})
+	if v!= nil {
+		res := service.BuildErrorResponse("Password Must Be 6 Character", utils.ShorcutValidationError())
+		return c.JSON(409, res)
+	}
+
+
+	if (password != confirmPassword) {
+		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+	
+	NewHashPassword := model.HashPasswordUpdate(password)
+
+	if err := db.Table("users").Where("id_user", id).Update("password", NewHashPassword).Error; err != nil {
+		res := service.BuildErrorResponse("Failed to Change Password", utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+
+
+	res := service.BuildResponseOnlyMessage(utils.ShorcutSuccessfulyWithParam("Update Password"))
+	return c.JSON(200, res)
+
 }
