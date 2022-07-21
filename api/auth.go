@@ -17,6 +17,15 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/utils"
 )
 
+func GetUsers(c echo.Context) error {
+	db := db.DbManager()
+	users := []model.User{}
+
+    db.Find(&users)
+	return c.JSON(http.StatusOK, users)
+}
+
+
 func Login(c echo.Context) error {
 
 	var user model.User
@@ -136,22 +145,24 @@ func RefreshToken(c echo.Context) error {
 
 	var user model.User
 	db := db.DbManager()
-	dataEmail := system.GetDataCookieToken(c)
 
-	errBind := c.Bind(&dataEmail)
+	userRefresh := system.GetDataCookieToken(c)
+	
+	errBind := c.Bind(&userRefresh)
 	if errBind != nil {
 		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Refresh")
 		return c.JSON(400, res)
 	}
 
-	if errRefresh := db.Where("email = ?", dataEmail).First(&user).Error; errRefresh != nil {
+	if errRefresh := db.Table(table.User()).Where("id_user = ?", userRefresh.IdUser).Find(&user).Error; errRefresh != nil {
 		res := service.BuildErrorResponse(errRefresh.Error(), utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}
 
 	token, err := user.GenerateToken()
 	if err != nil {
-		return err
+		res := service.BuildErrorResponse(err.Error(), utils.ShorcutValidationError())
+		return c.JSON(400, res)
 	}
 
 	c.SetCookie(&http.Cookie{
@@ -173,7 +184,7 @@ func RefreshToken(c echo.Context) error {
 	})
 }
 
-func ChangePassword(c echo.Context) error {
+func ResetPassword(c echo.Context) error {
 
 	db := db.DbManager()
 	
@@ -183,12 +194,16 @@ func ChangePassword(c echo.Context) error {
 		return c.JSON(400, res)
 	}	
 	
+	//strconv, string convert
 	id, _ := strconv.Atoi(c.Param("id"))
 
 	password := c.FormValue("password")
 	confirmPassword := c.FormValue("confirm_password")
 
-	_, v := govalidator.ValidateStruct(&auth.UpdatePassword{Password: password, ConfirmPassword: confirmPassword})
+	_, v := govalidator.ValidateStruct(&auth.UpdatePassword{
+		Password: password, 
+		ConfirmPassword: confirmPassword,
+	})
 	if v!= nil {
 		res := service.BuildErrorResponse("Password Must Be 6 Character", utils.ShorcutValidationError())
 		return c.JSON(409, res)
@@ -209,5 +224,9 @@ func ChangePassword(c echo.Context) error {
 
 	res := service.BuildResponseOnlyMessage(utils.ShorcutSuccessfulyWithParam("Update Password"))
 	return c.JSON(200, res)
+}
 
+func Profile(c echo.Context) error {
+
+	return nil
 }

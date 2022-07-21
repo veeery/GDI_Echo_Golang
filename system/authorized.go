@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"gitlab.com/veeery/gdi_echo_golang.git/controller/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
@@ -28,15 +29,21 @@ func AuthMiddleware() echo.MiddlewareFunc {
 				res := service.BuildErrorResponse("Unauthorized",utils.ShorcutUnAuthorization())
 				return c.JSON(401, res)
 			}
+			fmt.Println(splitToken)
 
-			token, err := model.ValidateToken(splitToken)
-
+			id, email ,err := model.ValidateToken(splitToken)
+	
 			if err != nil {
 				res := service.BuildErrorResponse(err.Error(), utils.ShorcutValidationError())
 				return c.JSON(401, res)
 			}
-			
-			c.Set("user", model.User{Email: token})
+
+			mapData := map[string]interface{}{
+				"id_user": uint16(id),
+				"email":email,
+			}
+
+			c.Set("user", mapData)
 
 			return next(c)
 
@@ -62,17 +69,22 @@ func DeleteAuth(c echo.Context, email string) error {
 	return nil
 }
 
-func GetDataCookieToken(c echo.Context) (data string) {
+func GetDataCookieToken(c echo.Context) auth.RefreshUser {
 
 	cookie := c.Get("user")
-	dataCookie := fmt.Sprintf("%v", cookie)
 
-	removeBool := strings.Replace(dataCookie, "0", "", -1)
-	leftRemove := strings.ReplaceAll(removeBool, "{", "")
-	rightRemove := strings.ReplaceAll(leftRemove, "}", "")
-	removeWhiteSpace := strings.ReplaceAll(rightRemove, " ", "")
+	fmt.Println(cookie)
 
-	data = removeWhiteSpace
+	mapData := cookie.(map[string]interface{})
+	user := auth.RefreshUser{}
 
-	return data
+	if data, ok := mapData["id_user"].(uint16); ok {
+		user.IdUser = data
+	}
+
+	if data, ok := mapData["email"].(string); ok {
+		user.Email = data
+	}
+
+	return user
 }

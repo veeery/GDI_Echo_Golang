@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	IdUser    uint32   `gorm:"AUTO_INCREMENT;PRIMARY_KEY;not null" json:"id_user"`
+	IdUser    uint16   `gorm:"AUTO_INCREMENT;PRIMARY_KEY;not null" json:"id_user"`
 	FirstName string   `gorm:"type:varchar(100);not null;" json:"first_name"`
 	LastName  string   `gorm:"type:varchar(100)" json:"last_name"`
 	Email     string   `gorm:"type:varchar(255);not null; index" json:"email"`
@@ -19,6 +19,7 @@ type User struct {
 }
 
 type JwtCustomClaims struct{
+	IdUser uint16 `json:"id_user"`
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
@@ -46,6 +47,7 @@ func (user *User) CheckPassword(providedPassword string) error {
 func (user *User) GenerateToken() (string, error) {
 
 	claims := &JwtCustomClaims{
+		IdUser: user.IdUser,
 		Email: user.Email,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())).Unix(),
@@ -58,7 +60,7 @@ func (user *User) GenerateToken() (string, error) {
 	return t, err
 }
 
-func ValidateToken(signedToken string) (email string,err error) {
+func ValidateToken(signedToken string) (idUser float64, email string, err error) {
 
 	tokenString := signedToken
 	claims := jwt.MapClaims{}
@@ -71,13 +73,13 @@ func ValidateToken(signedToken string) (email string,err error) {
 		})
 	
 	if token.Valid  {
+		idUser = claims["id_user"].(float64)
 		email = claims["email"].(string)
-		// fmt.Println(claims["email"])
 	}
 	
 	// for key, val := range claims {
 	// 	fmt.Printf("Key: %v, value: %v\n", key, val)
 	// }
-	// fmt.Print(token)
-	return email, err
+
+	return idUser, email, err
 }

@@ -22,6 +22,11 @@ func ShorcutValidationError() string {
 	return data
 }
 
+func ShorcutError() string {
+	data := "Error"
+	return data
+}
+
 //Only Message
 func ShorcutSuccessfulyCreated(data string) string {
 	s := data + " has been successfully created"
