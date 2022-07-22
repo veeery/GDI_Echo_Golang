@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.com/veeery/gdi_echo_golang.git/controller/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
+	"gitlab.com/veeery/gdi_echo_golang.git/dto/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
 	"gitlab.com/veeery/gdi_echo_golang.git/utils"

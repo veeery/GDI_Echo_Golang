@@ -8,9 +8,9 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/labstack/echo/v4"
 
-	"gitlab.com/veeery/gdi_echo_golang.git/controller/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
 	"gitlab.com/veeery/gdi_echo_golang.git/db/table"
+	"gitlab.com/veeery/gdi_echo_golang.git/dto/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
 	"gitlab.com/veeery/gdi_echo_golang.git/system"
@@ -24,7 +24,6 @@ func GetUsers(c echo.Context) error {
     db.Find(&users)
 	return c.JSON(http.StatusOK, users)
 }
-
 
 func Login(c echo.Context) error {
 
@@ -187,8 +186,9 @@ func RefreshToken(c echo.Context) error {
 func ResetPassword(c echo.Context) error {
 
 	db := db.DbManager()
+	var resetPasswordDTO auth.ResetPassword
 	
-	errBind := c.Bind(&auth.UpdatePassword{})
+	errBind := c.Bind(&resetPasswordDTO)
 	if errBind != nil {
 		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Change Password")
 		return c.JSON(400, res)
@@ -197,30 +197,24 @@ func ResetPassword(c echo.Context) error {
 	//strconv, string convert
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	password := c.FormValue("password")
-	confirmPassword := c.FormValue("confirm_password")
+	_, v := govalidator.ValidateStruct(resetPasswordDTO)
 
-	_, v := govalidator.ValidateStruct(&auth.UpdatePassword{
-		Password: password, 
-		ConfirmPassword: confirmPassword,
-	})
-	if v!= nil {
+	if v != nil {
 		res := service.BuildErrorResponse("Password Must Be 6 Character", utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	}
 
-	if (password != confirmPassword) {
+	if (resetPasswordDTO.ConfirmPassword != resetPasswordDTO.Password) {
 		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}
 	
-	NewHashPassword := model.HashPasswordUpdate(password)
+	NewHashPassword := model.HashPasswordUpdate(resetPasswordDTO.Password)
 
 	if err := db.Table(table.User()).Where("id_user", id).Update("password", NewHashPassword).Error; err != nil {
 		res := service.BuildErrorResponse("Failed to Change Password", utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}
-
 
 	res := service.BuildResponseOnlyMessage(utils.ShorcutSuccessfulyWithParam("Update Password"))
 	return c.JSON(200, res)
