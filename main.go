@@ -23,6 +23,7 @@ func main() {
 	firstRoute := e.Group(serverUrl+"auth")
 	{
 		firstRoute.POST("/register", api.Register)
+		firstRoute.POST("/registerv", api.RegisterV2)
 		firstRoute.POST("/login", api.Login)
 	}
 
@@ -32,8 +33,8 @@ func main() {
 		authRoute.DELETE("/logout", api.Logout)
 		authRoute.GET("/profile", api.Profile)
 		authRoute.POST("/refresh", api.RefreshToken)
-		authRoute.PATCH("/reset-password/:id", api.ResetPassword)
 		authRoute.GET("/users", api.GetUsers)
+		authRoute.PATCH("/reset-password/:id", api.ResetPassword)
 	}	
 
 	e.Logger.Fatal(e.Start(":8000"))

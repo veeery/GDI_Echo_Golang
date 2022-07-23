@@ -6,8 +6,8 @@ func ShorcutIsExists(data string) string {
 	return s
 }
 
-func ShorcutInvalidPassword() string {
-	s := "Password Invalid"
+func ShorcutInvalid(data string) string {
+	s :=  data + " Invalid"
 	return s
 }
 

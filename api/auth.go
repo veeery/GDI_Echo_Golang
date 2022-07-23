@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
@@ -36,15 +37,23 @@ func Login(c echo.Context) error {
 		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Login")
 		return c.JSON(400, res)
 	}
-	
+
+	err := validator.New().Struct(userLogin)
+
+	if err != nil {
+		errs := service.ErrorHandler(err)
+		res := service.BuildValidateError(errs, utils.ShorcutValidationError())
+		return c.JSON(405, res)
+	}
+
 	if errExists := db.Where("email = ?", userLogin.Email).First(&user).Error; errExists != nil {
-		res := service.BuildErrorResponse(errExists.Error(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(utils.ShorcutInvalid("Email"), utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}
 
 	errPassword := user.CheckPassword(userLogin.Password)
 	if errPassword != nil {
-		res := service.BuildErrorResponse(utils.ShorcutInvalidPassword(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(utils.ShorcutInvalid("Password"), utils.ShorcutValidationError())
 		return c.JSON(400, res)
 	}
 
@@ -89,6 +98,59 @@ func Register(c echo.Context) error {
 		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
 		return c.JSON(409, res)
 	}
+
+    err := db.Where("email = ?", register.Email).First(&model.User{}).Error
+	if err == nil {
+		res := service.BuildErrorResponse(utils.ShorcutIsExists("Email"), utils.ShorcutValidationError())
+		return c.JSON(409, res)
+	} 
+	
+	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
+	if errHp == nil {
+		res := service.BuildErrorResponse(utils.ShorcutIsExists("Phone Number"), utils.ShorcutValidationError())
+		return c.JSON(409, res)
+	}
+
+	if (register.Password != register.ConfirmPassword) {
+		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
+		return c.JSON(400, res)
+	}
+
+	user := model.User{
+		FirstName: register.FirstName,
+		LastName: register.LastName,
+		Email: register.Email,
+		Hp: register.Hp,
+		Password: register.Password,
+	}
+
+	user.HashPassword()
+	db.Create(&user)
+
+	return c.JSON(201, echo.Map{
+		"message": utils.ShorcutSuccessfulyCreated("Users"),
+		"user": user,
+	})
+}
+
+func RegisterV2(c echo.Context) error {
+
+	var register auth.RegisterUser
+	db := db.DbManager()
+
+	errDTO := c.Bind(&register)
+
+	if errDTO != nil {
+		response := service.BuildErrorResponse(errDTO.Error(), utils.ShorcutValidationError())
+		return c.JSON(400, response)
+	}
+
+	_, v := govalidator.ValidateStruct(&register)
+	if v != nil {
+		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
+		return c.JSON(409, res)
+	}
+	
 
     err := db.Where("email = ?", register.Email).First(&model.User{}).Error
 	if err == nil {
