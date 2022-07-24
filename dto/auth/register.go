@@ -1,7 +1,7 @@
 package auth
 
 type RegisterUser struct {
-	FirstName       string `json:"first_name" validate:"required,alphanum" form:"first_name"`
+	FirstName       string `json:"first_name" validate:"required" form:"first_name"`
 	LastName        string `json:"last_name" form:"last_name"`
 	Email           string `json:"email" validate:"required,email" form:"email"`
 	Hp              string `json:"hp" validate:"required,numeric,min=12,max=13" form:"hp"`

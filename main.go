@@ -36,5 +36,11 @@ func main() {
 		authRoute.PATCH("/change-password", api.ChangePassword)
 	}	
 
+	companyRoute := e.Group(serverUrl+"company")
+	companyRoute.Use(system.AuthMiddleware())
+	{
+		companyRoute.POST("/register", api.RegisterCompany)
+	}
+
 	e.Logger.Fatal(e.Start(":8000"))
 }

@@ -90,7 +90,6 @@ func Register(c echo.Context) error {
 	db := db.DbManager()
 
 	errDTO := c.Bind(&registerDTO)
-
 	if errDTO != nil {
 		response := service.BuildErrorResponse(errDTO.Error(), shortcut.ValidationError())
 		return c.JSON(400, response)

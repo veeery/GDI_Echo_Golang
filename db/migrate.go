@@ -9,5 +9,6 @@ type Migrate struct {
 func MigrateTable() []Migrate {
 	return []Migrate{
 		{Table: model.User{}},
+		{Table: model.Company{}},
 	}
 }
