@@ -254,3 +254,39 @@ func Profile(c echo.Context) error {
 		},
 	})
 }
+
+func ChangePassword(c echo.Context) error {
+
+	db := db.DbManager()
+	var changePasswordDTO auth.ResetPassword
+
+	userChangePassword := system.GetDataCookieToken(c)
+	
+	errBind := c.Bind(&changePasswordDTO)
+	if errBind != nil {
+		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Change Password")
+		return c.JSON(400, res)
+	}	
+
+	err := validator.New().Struct(changePasswordDTO)
+	if err != nil {
+		errs := service.ErrorHandler(err)
+		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		return c.JSON(400, res)
+	}
+
+	if (changePasswordDTO.ConfirmPassword != changePasswordDTO.Password) {
+		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
+		return c.JSON(400, res)
+	}
+	
+	NewHashPassword := model.HashPasswordUpdate(changePasswordDTO.Password)
+
+	if err := db.Table(table.User()).Where("id_user", userChangePassword.IdUser).Update("password", NewHashPassword).Error; err != nil {
+		res := service.BuildErrorResponse("Failed to Change Password", shortcut.ValidationError())
+		return c.JSON(400, res)
+	}
+
+	res := service.BuildResponseOnlyMessage(shortcut.SuccessfulyWithParam("Update Password"))
+	return c.JSON(200, res)
+}
