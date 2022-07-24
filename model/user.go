@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"gitlab.com/veeery/gdi_echo_golang.git/utils"
+	"gitlab.com/veeery/gdi_echo_golang.git/shortcut"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -50,12 +50,12 @@ func (user *User) GenerateToken() (string, error) {
 		IdUser: user.IdUser,
 		Email: user.Email,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())).Unix(),
+			ExpiresAt: time.Now().Add(time.Second * time.Duration(shortcut.ExpiredTokenTime())).Unix(),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte(utils.SignedToken()))
+	t, err := token.SignedString([]byte(shortcut.SignedToken()))
 
 	return t, err
 }
@@ -69,7 +69,7 @@ func ValidateToken(signedToken string) (idUser float64, email string, err error)
 		tokenString,
 		claims,
 		func(t *jwt.Token) (interface{}, error) {
-			return []byte(utils.SignedToken()), nil
+			return []byte(shortcut.SignedToken()), nil
 		})
 	
 	if token.Valid  {

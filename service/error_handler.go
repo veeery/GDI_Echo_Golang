@@ -16,7 +16,7 @@ func MsgForTag(fe validator.FieldError) string {
 	case "required":
 		return "This field is required"
 	case "email":
-		return "Invalid Email"
+		return "Invalid Email Format"
 	case "min":
 		return "Character Min 6"
 	}

@@ -14,8 +14,8 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/dto/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
+	"gitlab.com/veeery/gdi_echo_golang.git/shortcut"
 	"gitlab.com/veeery/gdi_echo_golang.git/system"
-	"gitlab.com/veeery/gdi_echo_golang.git/utils"
 )
 
 func GetUsers(c echo.Context) error {
@@ -42,18 +42,18 @@ func Login(c echo.Context) error {
 
 	if err != nil {
 		errs := service.ErrorHandler(err)
-		res := service.BuildValidateError(errs, utils.ShorcutValidationError())
+		res := service.BuildValidateError(errs, shortcut.ValidationError())
 		return c.JSON(405, res)
 	}
 
 	if errExists := db.Where("email = ?", userLogin.Email).First(&user).Error; errExists != nil {
-		res := service.BuildErrorResponse(utils.ShorcutInvalid("Email"), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(shortcut.Invalid("Email"), shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
 	errPassword := user.CheckPassword(userLogin.Password)
 	if errPassword != nil {
-		res := service.BuildErrorResponse(utils.ShorcutInvalid("Password"), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(shortcut.Invalid("Password"), shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
@@ -65,7 +65,7 @@ func Login(c echo.Context) error {
 	c.SetCookie(&http.Cookie{
 		Name: "token",
 		Value: token,
-		Expires: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())),
+		Expires: time.Now().Add(time.Second * time.Duration(shortcut.ExpiredTokenTime())),
 	})
 
 	return c.JSON(200, echo.Map{
@@ -74,7 +74,7 @@ func Login(c echo.Context) error {
 			"token": echo.Map{
 				"access_token": token,
 				"type": "jwt",
-				"expired": utils.ExpiredTokenTime(),
+				"expired": shortcut.ExpiredTokenTime(),
 			},
 			"data": user,
 		},
@@ -89,30 +89,30 @@ func Register(c echo.Context) error {
 	errDTO := c.Bind(&register)
 
 	if errDTO != nil {
-		response := service.BuildErrorResponse(errDTO.Error(), utils.ShorcutValidationError())
+		response := service.BuildErrorResponse(errDTO.Error(), shortcut.ValidationError())
 		return c.JSON(400, response)
 	}
 
 	_, v := govalidator.ValidateStruct(&register)
 	if v != nil {
-		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(v.Error(), shortcut.ValidationError())
 		return c.JSON(409, res)
 	}
 
     err := db.Where("email = ?", register.Email).First(&model.User{}).Error
 	if err == nil {
-		res := service.BuildErrorResponse(utils.ShorcutIsExists("Email"), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(shortcut.IsExists("Email"), shortcut.ValidationError())
 		return c.JSON(409, res)
 	} 
 	
 	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
 	if errHp == nil {
-		res := service.BuildErrorResponse(utils.ShorcutIsExists("Phone Number"), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(shortcut.IsExists("Phone Number"), shortcut.ValidationError())
 		return c.JSON(409, res)
 	}
 
 	if (register.Password != register.ConfirmPassword) {
-		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
@@ -128,7 +128,7 @@ func Register(c echo.Context) error {
 	db.Create(&user)
 
 	return c.JSON(201, echo.Map{
-		"message": utils.ShorcutSuccessfulyCreated("Users"),
+		"message": shortcut.SuccessfulyCreated("Users"),
 		"user": user,
 	})
 }
@@ -141,31 +141,31 @@ func RegisterV2(c echo.Context) error {
 	errDTO := c.Bind(&register)
 
 	if errDTO != nil {
-		response := service.BuildErrorResponse(errDTO.Error(), utils.ShorcutValidationError())
+		response := service.BuildErrorResponse(errDTO.Error(), shortcut.ValidationError())
 		return c.JSON(400, response)
 	}
 
 	_, v := govalidator.ValidateStruct(&register)
 	if v != nil {
-		res := service.BuildErrorResponse(v.Error(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(v.Error(), shortcut.ValidationError())
 		return c.JSON(409, res)
 	}
 	
 
     err := db.Where("email = ?", register.Email).First(&model.User{}).Error
 	if err == nil {
-		res := service.BuildErrorResponse(utils.ShorcutIsExists("Email"), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(shortcut.IsExists("Email"), shortcut.ValidationError())
 		return c.JSON(409, res)
 	} 
 	
 	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
 	if errHp == nil {
-		res := service.BuildErrorResponse(utils.ShorcutIsExists("Phone Number"), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(shortcut.IsExists("Phone Number"), shortcut.ValidationError())
 		return c.JSON(409, res)
 	}
 
 	if (register.Password != register.ConfirmPassword) {
-		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
@@ -181,7 +181,7 @@ func RegisterV2(c echo.Context) error {
 	db.Create(&user)
 
 	return c.JSON(201, echo.Map{
-		"message": utils.ShorcutSuccessfulyCreated("Users"),
+		"message": shortcut.SuccessfulyCreated("Users"),
 		"user": user,
 	})
 }
@@ -198,7 +198,7 @@ func Logout(c echo.Context) error {
 
 	c.SetCookie(&cookie)
 	
-	res := service.BuildResponseOnlyMessage(utils.ShorcutSuccessfulyWithParam("Log Out"))
+	res := service.BuildResponseOnlyMessage(shortcut.SuccessfulyWithParam("Log Out"))
 	return c.JSON(200, res)
 }
 
@@ -216,20 +216,20 @@ func RefreshToken(c echo.Context) error {
 	}
 
 	if errRefresh := db.Table(table.User()).Where("id_user = ?", userRefresh.IdUser).Find(&user).Error; errRefresh != nil {
-		res := service.BuildErrorResponse(errRefresh.Error(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(errRefresh.Error(), shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
 	token, err := user.GenerateToken()
 	if err != nil {
-		res := service.BuildErrorResponse(err.Error(), utils.ShorcutValidationError())
+		res := service.BuildErrorResponse(err.Error(), shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
 	c.SetCookie(&http.Cookie{
 		Name: "token",
 		Value: token,
-		Expires: time.Now().Add(time.Second * time.Duration(utils.ExpiredTokenTime())),
+		Expires: time.Now().Add(time.Second * time.Duration(shortcut.ExpiredTokenTime())),
 	})
 
 	return c.JSON(200, echo.Map{
@@ -238,7 +238,7 @@ func RefreshToken(c echo.Context) error {
 			"token": echo.Map{
 				"access_token": token,
 				"type": "jwt",
-				"expired": utils.ExpiredTokenTime(),
+				"expired": shortcut.ExpiredTokenTime(),
 			},
 			"data": user,
 		},
@@ -262,23 +262,23 @@ func ResetPassword(c echo.Context) error {
 	_, v := govalidator.ValidateStruct(resetPasswordDTO)
 
 	if v != nil {
-		res := service.BuildErrorResponse("Password Must Be 6 Character", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Password Must Be 6 Character", shortcut.ValidationError())
 		return c.JSON(409, res)
 	}
 
 	if (resetPasswordDTO.ConfirmPassword != resetPasswordDTO.Password) {
-		res := service.BuildErrorResponse("Password not match", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 	
 	NewHashPassword := model.HashPasswordUpdate(resetPasswordDTO.Password)
 
 	if err := db.Table(table.User()).Where("id_user", id).Update("password", NewHashPassword).Error; err != nil {
-		res := service.BuildErrorResponse("Failed to Change Password", utils.ShorcutValidationError())
+		res := service.BuildErrorResponse("Failed to Change Password", shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
-	res := service.BuildResponseOnlyMessage(utils.ShorcutSuccessfulyWithParam("Update Password"))
+	res := service.BuildResponseOnlyMessage(shortcut.SuccessfulyWithParam("Update Password"))
 	return c.JSON(200, res)
 }
 

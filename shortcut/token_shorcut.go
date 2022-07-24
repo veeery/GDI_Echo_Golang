@@ -1,4 +1,4 @@
-package utils
+package shortcut
 
 func SignedToken() string {
 	a := "secret"

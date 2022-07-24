@@ -1,39 +1,39 @@
-package utils
+package shortcut
 
 //Message body
-func ShorcutIsExists(data string) string {
+func IsExists(data string) string {
 	s := data + " is already exists"
 	return s
 }
 
-func ShorcutInvalid(data string) string {
+func Invalid(data string) string {
 	s :=  data + " Invalid"
 	return s
 }
 
-func ShorcutUnAuthorization() string {
+func UnAuthorization() string {
 	s := "Request Unauthorized"
 	return s
 }
 
 // Message Title
-func ShorcutValidationError() string {
+func ValidationError() string {
 	data := "Validation Error"
 	return data
 }
 
-func ShorcutError() string {
+func Error() string {
 	data := "Error"
 	return data
 }
 
 //Only Message
-func ShorcutSuccessfulyCreated(data string) string {
+func SuccessfulyCreated(data string) string {
 	s := data + " has been successfully created"
 	return s
 }
 
-func ShorcutSuccessfulyWithParam(typeSucessfully string) string {
+func SuccessfulyWithParam(typeSucessfully string) string {
 	s := "Successfully " + typeSucessfully
 	return s
 }
