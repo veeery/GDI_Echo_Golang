@@ -23,7 +23,6 @@ func main() {
 	firstRoute := e.Group(serverUrl+"auth")
 	{
 		firstRoute.POST("/register", api.Register)
-		firstRoute.POST("/registerv", api.RegisterV2)
 		firstRoute.POST("/login", api.Login)
 	}
 

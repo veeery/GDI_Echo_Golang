@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 
@@ -29,29 +28,29 @@ func GetUsers(c echo.Context) error {
 func Login(c echo.Context) error {
 
 	var user model.User
-	var userLogin auth.LoginUser
+	var userLoginDTO auth.LoginUser
 	db := db.DbManager()
 
-	errBind := c.Bind(&userLogin)
+	errBind := c.Bind(&userLoginDTO)
 	if errBind != nil {
 		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Login")
 		return c.JSON(400, res)
 	}
 
-	err := validator.New().Struct(userLogin)
+	err := validator.New().Struct(userLoginDTO)
 
 	if err != nil {
 		errs := service.ErrorHandler(err)
 		res := service.BuildValidateError(errs, shortcut.ValidationError())
-		return c.JSON(405, res)
+		return c.JSON(400, res)
 	}
 
-	if errExists := db.Where("email = ?", userLogin.Email).First(&user).Error; errExists != nil {
+	if errExists := db.Where("email = ?", userLoginDTO.Email).First(&user).Error; errExists != nil {
 		res := service.BuildErrorResponse(shortcut.Invalid("Email"), shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
-	errPassword := user.CheckPassword(userLogin.Password)
+	errPassword := user.CheckPassword(userLoginDTO.Password)
 	if errPassword != nil {
 		res := service.BuildErrorResponse(shortcut.Invalid("Password"), shortcut.ValidationError())
 		return c.JSON(400, res)
@@ -83,98 +82,46 @@ func Login(c echo.Context) error {
 
 func Register(c echo.Context) error {
 
-	var register auth.RegisterUser
+	var registerDTO auth.RegisterUser
 	db := db.DbManager()
 
-	errDTO := c.Bind(&register)
+	errDTO := c.Bind(&registerDTO)
 
 	if errDTO != nil {
 		response := service.BuildErrorResponse(errDTO.Error(), shortcut.ValidationError())
 		return c.JSON(400, response)
 	}
 
-	_, v := govalidator.ValidateStruct(&register)
-	if v != nil {
-		res := service.BuildErrorResponse(v.Error(), shortcut.ValidationError())
-		return c.JSON(409, res)
+	err := validator.New().Struct(registerDTO)
+	if err != nil {
+		errs := service.ErrorHandler(err)
+		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		return c.JSON(400, res)
 	}
-
-    err := db.Where("email = ?", register.Email).First(&model.User{}).Error
-	if err == nil {
+	
+    errEmail := db.Where("email = ?", registerDTO.Email).First(&model.User{}).Error
+	if errEmail == nil {
 		res := service.BuildErrorResponse(shortcut.IsExists("Email"), shortcut.ValidationError())
 		return c.JSON(409, res)
 	} 
 	
-	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
+	errHp := db.Where("hp = ?", registerDTO.Hp).First(&model.User{}).Error
 	if errHp == nil {
 		res := service.BuildErrorResponse(shortcut.IsExists("Phone Number"), shortcut.ValidationError())
 		return c.JSON(409, res)
 	}
 
-	if (register.Password != register.ConfirmPassword) {
+	if (registerDTO.Password != registerDTO.ConfirmPassword) {
 		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
 		return c.JSON(400, res)
 	}
 
 	user := model.User{
-		FirstName: register.FirstName,
-		LastName: register.LastName,
-		Email: register.Email,
-		Hp: register.Hp,
-		Password: register.Password,
-	}
-
-	user.HashPassword()
-	db.Create(&user)
-
-	return c.JSON(201, echo.Map{
-		"message": shortcut.SuccessfulyCreated("Users"),
-		"user": user,
-	})
-}
-
-func RegisterV2(c echo.Context) error {
-
-	var register auth.RegisterUser
-	db := db.DbManager()
-
-	errDTO := c.Bind(&register)
-
-	if errDTO != nil {
-		response := service.BuildErrorResponse(errDTO.Error(), shortcut.ValidationError())
-		return c.JSON(400, response)
-	}
-
-	_, v := govalidator.ValidateStruct(&register)
-	if v != nil {
-		res := service.BuildErrorResponse(v.Error(), shortcut.ValidationError())
-		return c.JSON(409, res)
-	}
-	
-
-    err := db.Where("email = ?", register.Email).First(&model.User{}).Error
-	if err == nil {
-		res := service.BuildErrorResponse(shortcut.IsExists("Email"), shortcut.ValidationError())
-		return c.JSON(409, res)
-	} 
-	
-	errHp := db.Where("hp = ?", register.Hp).First(&model.User{}).Error
-	if errHp == nil {
-		res := service.BuildErrorResponse(shortcut.IsExists("Phone Number"), shortcut.ValidationError())
-		return c.JSON(409, res)
-	}
-
-	if (register.Password != register.ConfirmPassword) {
-		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
-		return c.JSON(400, res)
-	}
-
-	user := model.User{
-		FirstName: register.FirstName,
-		LastName: register.LastName,
-		Email: register.Email,
-		Hp: register.Hp,
-		Password: register.Password,
+		FirstName: registerDTO.FirstName,
+		LastName: registerDTO.LastName,
+		Email: registerDTO.Email,
+		Hp: registerDTO.Hp,
+		Password: registerDTO.Password,
 	}
 
 	user.HashPassword()
@@ -259,11 +206,11 @@ func ResetPassword(c echo.Context) error {
 	//strconv, string convert
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	_, v := govalidator.ValidateStruct(resetPasswordDTO)
-
-	if v != nil {
-		res := service.BuildErrorResponse("Password Must Be 6 Character", shortcut.ValidationError())
-		return c.JSON(409, res)
+	err := validator.New().Struct(resetPasswordDTO)
+	if err != nil {
+		errs := service.ErrorHandler(err)
+		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		return c.JSON(400, res)
 	}
 
 	if (resetPasswordDTO.ConfirmPassword != resetPasswordDTO.Password) {
