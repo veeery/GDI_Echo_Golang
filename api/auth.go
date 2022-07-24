@@ -231,5 +231,26 @@ func ResetPassword(c echo.Context) error {
 
 func Profile(c echo.Context) error {
 
-	return nil
+	db := db.DbManager()
+	var user model.User
+
+	userProfile := system.GetDataCookieToken(c)
+
+	errBind := c.Bind(&userProfile)
+	if errBind != nil {
+		res := service.BuildErrorResponse(errBind.Error(), "Error Bind Refresh")
+		return c.JSON(400, res)
+	}
+
+	if errRefresh := db.Table(table.User()).Where("id_user = ?", userProfile.IdUser).Find(&user).Error; errRefresh != nil {
+		res := service.BuildErrorResponse(errRefresh.Error(), shortcut.ValidationError())
+		return c.JSON(400, res)
+	}
+
+	return c.JSON(200, echo.Map{
+		"message": "Successfully",
+		"data": echo.Map{
+			"user": user,
+		},
+	})
 }
