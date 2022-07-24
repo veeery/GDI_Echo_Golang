@@ -13,6 +13,7 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/dto/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
+	JsonFormat "gitlab.com/veeery/gdi_echo_golang.git/service/json_format"
 	"gitlab.com/veeery/gdi_echo_golang.git/shortcut"
 	"gitlab.com/veeery/gdi_echo_golang.git/system"
 )
@@ -56,28 +57,31 @@ func Login(c echo.Context) error {
 		return c.JSON(400, res)
 	}
 
-	token, err := user.GenerateToken()
+	tokenString, err := user.GenerateToken()
 	if err != nil {
 		return err
 	}
 
 	c.SetCookie(&http.Cookie{
 		Name: "token",
-		Value: token,
+		Value: tokenString,
 		Expires: time.Now().Add(time.Second * time.Duration(shortcut.ExpiredTokenTime())),
 	})
 
-	return c.JSON(200, echo.Map{
-		"message": "Successfully login",
-		"data": echo.Map{
-			"token": echo.Map{
-				"access_token": token,
-				"type": "jwt",
-				"expired": shortcut.ExpiredTokenTime(),
-			},
-			"data": user,
-		},
-	})
+	token := model.Token{
+		Token: tokenString,
+		Type: "jwt",
+		Expired: shortcut.ExpiredTokenTime(),
+	}
+
+	return c.JSON(
+		200,
+		JsonFormat.AuthUser(
+			"Successfully Login",
+			token,
+			user,
+		),
+	)
 }
 
 func Register(c echo.Context) error {
@@ -127,10 +131,13 @@ func Register(c echo.Context) error {
 	user.HashPassword()
 	db.Create(&user)
 
-	return c.JSON(201, echo.Map{
-		"message": shortcut.SuccessfulyCreated("Users"),
-		"user": user,
-	})
+	return c.JSON(
+		201,
+		JsonFormat.User(
+			shortcut.SuccessfulyCreated("User"),
+			user,
+		),
+	)
 }
 
 func Logout(c echo.Context) error {
@@ -167,7 +174,7 @@ func RefreshToken(c echo.Context) error {
 		return c.JSON(400, res)
 	}
 
-	token, err := user.GenerateToken()
+	tokenString, err := user.GenerateToken()
 	if err != nil {
 		res := service.BuildErrorResponse(err.Error(), shortcut.ValidationError())
 		return c.JSON(400, res)
@@ -175,21 +182,24 @@ func RefreshToken(c echo.Context) error {
 
 	c.SetCookie(&http.Cookie{
 		Name: "token",
-		Value: token,
+		Value: tokenString,
 		Expires: time.Now().Add(time.Second * time.Duration(shortcut.ExpiredTokenTime())),
 	})
 
-	return c.JSON(200, echo.Map{
-		"message": "Successfully Refresh",
-		"data": echo.Map{
-			"token": echo.Map{
-				"access_token": token,
-				"type": "jwt",
-				"expired": shortcut.ExpiredTokenTime(),
-			},
-			"data": user,
-		},
-	})
+	token := model.Token{
+		Token: tokenString,
+		Type: "jwt",
+		Expired: shortcut.ExpiredTokenTime(),
+	}
+	
+	return c.JSON(
+		200,
+		JsonFormat.AuthUser(
+			"Successfully Refresh",
+			token,
+			user,
+		),
+	)
 }
 
 func ResetPassword(c echo.Context) error {
@@ -247,12 +257,10 @@ func Profile(c echo.Context) error {
 		return c.JSON(400, res)
 	}
 
-	return c.JSON(200, echo.Map{
-		"message": "Successfully",
-		"data": echo.Map{
-			"user": user,
-		},
-	})
+	return c.JSON(200, JsonFormat.User(
+		"Successfully",
+		user,
+	))
 }
 
 func ChangePassword(c echo.Context) error {
