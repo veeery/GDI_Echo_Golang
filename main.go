@@ -40,6 +40,7 @@ func main() {
 	companyRoute.Use(system.AuthMiddleware())
 	{
 		companyRoute.POST("/register", api.RegisterCompany)
+		companyRoute.GET("/:id", api.ProfileCompany)
 	}
 
 	e.Logger.Fatal(e.Start(":8000"))

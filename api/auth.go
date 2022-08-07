@@ -257,7 +257,7 @@ func Profile(c echo.Context) error {
 	}
 
 	return c.JSON(200, JsonFormat.User(
-		"Successfully",
+		"Successfully Load",
 		user,
 	))
 }

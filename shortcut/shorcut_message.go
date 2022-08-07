@@ -16,6 +16,11 @@ func UnAuthorization() string {
 	return s
 }
 
+func NotFound(data string) string {
+	s := data + " Not Found"
+	return s
+}
+
 // Message Title
 func ValidationError() string {
 	data := "Validation Error"

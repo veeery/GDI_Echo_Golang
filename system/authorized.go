@@ -29,7 +29,7 @@ func AuthMiddleware() echo.MiddlewareFunc {
 				res := service.BuildErrorResponse("Unauthorized",shortcut.UnAuthorization())
 				return c.JSON(401, res)
 			}
-			fmt.Println(splitToken)
+	
 
 			id, email ,err := model.ValidateToken(splitToken)
 	
