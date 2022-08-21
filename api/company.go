@@ -4,41 +4,70 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"gitlab.com/veeery/gdi_echo_golang.git/db"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
-	JsonFormat "gitlab.com/veeery/gdi_echo_golang.git/service/json_format"
-	"gitlab.com/veeery/gdi_echo_golang.git/shortcut"
 )
 
 func RegisterCompany(c echo.Context) error {
 
 	db := db.DbManager()
 	var registerDTO model.Company
+	var phoneDTO model.CompanyPhone
 
-	errDTO1 := c.Bind(&registerDTO)
-	if errDTO1 != nil {
-		response := service.BuildErrorResponse(errDTO1.Error(), "Validation Error 1")
+	errDTO := c.Bind(&registerDTO)
+	if errDTO != nil {
+		response := service.BuildErrorResponse(errDTO.Error(), "Validation Error")
 		return c.JSON(400, response)
 	}
 
-	company := model.Company{
-		CompanyName: registerDTO.CompanyName,
-		CompanyAddress: registerDTO.CompanyAddress,
-		CompanyPhone: registerDTO.CompanyPhone,
+	//validasi registerDTO sesuai dengan validate di modal.Company
+	err := validator.New().Struct(&registerDTO)
+	if err != nil {
+		errs := service.ErrorHandler(err)
+		res := service.BuildValidateError(errs, "Validation Error")
+		return c.JSON(400, res)
 	}
 
-	db.Create(&company)
+	//pindahkan data dari registerDTO(modal.Company) ke phoneDTO(modal.CompanyPhone)
+	//untuk memvalidasi sesuai dengan validate di modal.CompanyPhone
+	for i:=0; i< len(registerDTO.CompanyPhone); i++ {
+		phoneDTO = registerDTO.CompanyPhone[i]
+	}
 
-	fmt.Println(company)
+	//validate phoneDTO(modal.CompanyPhone)
+	errPhone := validator.New().Struct(&phoneDTO)
+	fmt.Println(phoneDTO)
+	if errPhone != nil {
+		errs := service.ErrorHandler(errPhone)
+		res := service.BuildValidateError(errs, "Validation Errossr")
+		return c.JSON(400, res)
+	}
+	
+    errEmail := db.Where("company_email = ?", registerDTO.CompanyEmail).First(&model.Company{}).Error
+	if errEmail == nil {
+		res := service.BuildErrorResponse("Email is Already Exist", "Validation Error")
+		return c.JSON(409, res)
+	} 
+	
+	errHp := db.Where("company_phone = ?", registerDTO.CompanyPhone).First(&model.Company{}).Error
+	if errHp == nil {
+		res := service.BuildErrorResponse("PhoneNumber is Already Exist", "Validation Error")
+		return c.JSON(409, res)
+	}
+
+	db.Create(&registerDTO)
 
 	return c.JSON(
 		201,
-		JsonFormat.Company(
-			shortcut.SuccessfulyCreated("Company"),
-			company,
-		),
+		echo.Map{
+			"message": "Succesfully Created",
+			"data": echo.Map{
+				"company": registerDTO,
+			},
+		},
 	)
 }
 
@@ -58,12 +87,17 @@ func ProfileCompany(c echo.Context) error {
 
 	err := db.Where("id_company = ? ", id).Preload("CompanyPhone").First(&company).Error
 	if err != nil {
-		res := service.BuildResponseOnlyMessage(shortcut.NotFound("Profile"))
+		res := service.BuildResponseOnlyMessage("Profile Not Found")
 		return c.JSON(400, res)
 	}
 
-	return c.JSON(200, JsonFormat.Company(
-		"Sucessfully Load",
-		company,
-	))
+	return c.JSON(
+		200,
+		echo.Map{
+			"message": "Succesfully Load",
+			"data": echo.Map{
+				"company": company,
+			},
+		},
+	)
 }

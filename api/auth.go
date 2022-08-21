@@ -13,7 +13,6 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/dto/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
-	JsonFormat "gitlab.com/veeery/gdi_echo_golang.git/service/json_format"
 	"gitlab.com/veeery/gdi_echo_golang.git/shortcut"
 	"gitlab.com/veeery/gdi_echo_golang.git/system"
 )
@@ -42,18 +41,18 @@ func Login(c echo.Context) error {
 
 	if err != nil {
 		errs := service.ErrorHandler(err)
-		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		res := service.BuildValidateError(errs, "Validation Error")
 		return c.JSON(400, res)
 	}
 
 	if errExists := db.Where("email = ?", userLoginDTO.Email).First(&user).Error; errExists != nil {
-		res := service.BuildErrorResponse(shortcut.Invalid("Email"), shortcut.ValidationError())
+		res := service.BuildErrorResponse("Invalid Email", "Validation Error")
 		return c.JSON(400, res)
 	}
 
 	errPassword := user.CheckPassword(userLoginDTO.Password)
 	if errPassword != nil {
-		res := service.BuildErrorResponse(shortcut.Invalid("Password"), shortcut.ValidationError())
+		res := service.BuildErrorResponse("Invalid Password", "Validation Error")
 		return c.JSON(400, res)
 	}
 
@@ -76,11 +75,13 @@ func Login(c echo.Context) error {
 
 	return c.JSON(
 		200,
-		JsonFormat.AuthUser(
-			"Successfully Login",
-			token,
-			user,
-		),
+		echo.Map{
+			"message": "Successfully Login",
+			"data": echo.Map{
+				"user": user,
+				"token": token,
+			},
+		},
 	)
 }
 
@@ -91,31 +92,31 @@ func Register(c echo.Context) error {
 
 	errDTO := c.Bind(&registerDTO)
 	if errDTO != nil {
-		response := service.BuildErrorResponse(errDTO.Error(), shortcut.ValidationError())
+		response := service.BuildErrorResponse(errDTO.Error(), "Validation Error")
 		return c.JSON(400, response)
 	}
 
 	err := validator.New().Struct(registerDTO)
 	if err != nil {
 		errs := service.ErrorHandler(err)
-		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		res := service.BuildValidateError(errs, "Validation Error")
 		return c.JSON(400, res)
 	}
 	
     errEmail := db.Where("email = ?", registerDTO.Email).First(&model.User{}).Error
 	if errEmail == nil {
-		res := service.BuildErrorResponse(shortcut.IsExists("Email"), shortcut.ValidationError())
+		res := service.BuildErrorResponse("Email is Already Exist", "Validation Error")
 		return c.JSON(409, res)
 	} 
 	
 	errHp := db.Where("hp = ?", registerDTO.Hp).First(&model.User{}).Error
 	if errHp == nil {
-		res := service.BuildErrorResponse(shortcut.IsExists("Phone Number"), shortcut.ValidationError())
+		res := service.BuildErrorResponse("Phone Number is Already Exist", "Validation Error")
 		return c.JSON(409, res)
 	}
 
 	if (registerDTO.Password != registerDTO.ConfirmPassword) {
-		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
+		res := service.BuildErrorResponse("Password not match", "Validation Error")
 		return c.JSON(400, res)
 	}
 
@@ -132,11 +133,13 @@ func Register(c echo.Context) error {
 
 	return c.JSON(
 		201,
-		JsonFormat.User(
-			shortcut.SuccessfulyCreated("User"),
-			user,
-		),
-	)
+		echo.Map{
+			"data": echo.Map{
+				"message" : "Successfuly Created",
+				"user" : user,
+			},
+		},
+	)	
 }
 
 func Logout(c echo.Context) error {
@@ -151,7 +154,7 @@ func Logout(c echo.Context) error {
 
 	c.SetCookie(&cookie)
 	
-	res := service.BuildResponseOnlyMessage(shortcut.SuccessfulyWithParam("Log Out"))
+	res := service.BuildResponseOnlyMessage("Successfully Log Out")
 	return c.JSON(200, res)
 }
 
@@ -169,13 +172,13 @@ func RefreshToken(c echo.Context) error {
 	}
 
 	if errRefresh := db.Table(table.User()).Where("id_user = ?", userRefresh.IdUser).Find(&user).Error; errRefresh != nil {
-		res := service.BuildErrorResponse(errRefresh.Error(), shortcut.ValidationError())
+		res := service.BuildErrorResponse(errRefresh.Error(), "Validation Error")
 		return c.JSON(400, res)
 	}
 
 	tokenString, err := user.GenerateToken()
 	if err != nil {
-		res := service.BuildErrorResponse(err.Error(), shortcut.ValidationError())
+		res := service.BuildErrorResponse(err.Error(), "Validation Error")
 		return c.JSON(400, res)
 	}
 
@@ -193,11 +196,13 @@ func RefreshToken(c echo.Context) error {
 	
 	return c.JSON(
 		200,
-		JsonFormat.AuthUser(
-			"Successfully Refresh",
-			token,
-			user,
-		),
+		echo.Map{
+			"message": "Successfully Refresh",
+			"data": echo.Map{
+				"user": user,
+				"token": token,
+			},
+		},
 	)
 }
 
@@ -218,23 +223,23 @@ func ResetPassword(c echo.Context) error {
 	err := validator.New().Struct(resetPasswordDTO)
 	if err != nil {
 		errs := service.ErrorHandler(err)
-		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		res := service.BuildValidateError(errs, "Validation Error")
 		return c.JSON(400, res)
 	}
 
 	if (resetPasswordDTO.ConfirmPassword != resetPasswordDTO.Password) {
-		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
+		res := service.BuildErrorResponse("Password not match", "Validation Error")
 		return c.JSON(400, res)
 	}
 	
 	NewHashPassword := model.HashPasswordUpdate(resetPasswordDTO.Password)
 
 	if err := db.Table(table.User()).Where("id_user", id).Update("password", NewHashPassword).Error; err != nil {
-		res := service.BuildErrorResponse("Failed to Change Password", shortcut.ValidationError())
+		res := service.BuildErrorResponse("Failed to Change Password", "Validation Error")
 		return c.JSON(400, res)
 	}
 
-	res := service.BuildResponseOnlyMessage(shortcut.SuccessfulyWithParam("Update Password"))
+	res := service.BuildResponseOnlyMessage("Successfully Update Password")
 	return c.JSON(200, res)
 }
 
@@ -252,14 +257,19 @@ func Profile(c echo.Context) error {
 	}
 
 	if errRefresh := db.Table(table.User()).Where("id_user = ?", userProfile.IdUser).Find(&user).Error; errRefresh != nil {
-		res := service.BuildErrorResponse(errRefresh.Error(), shortcut.ValidationError())
+		res := service.BuildErrorResponse(errRefresh.Error(), "Validation Error")
 		return c.JSON(400, res)
 	}
 
-	return c.JSON(200, JsonFormat.User(
-		"Successfully Load",
-		user,
-	))
+	return c.JSON(
+		200,
+		echo.Map{
+			"data": echo.Map{
+				"message":"Successfully Load",
+				"user": user,
+			},
+		},
+	)
 }
 
 func ChangePassword(c echo.Context) error {
@@ -278,22 +288,22 @@ func ChangePassword(c echo.Context) error {
 	err := validator.New().Struct(changePasswordDTO)
 	if err != nil {
 		errs := service.ErrorHandler(err)
-		res := service.BuildValidateError(errs, shortcut.ValidationError())
+		res := service.BuildValidateError(errs, "Validation Error")
 		return c.JSON(400, res)
 	}
 
 	if (changePasswordDTO.ConfirmPassword != changePasswordDTO.Password) {
-		res := service.BuildErrorResponse("Password not match", shortcut.ValidationError())
+		res := service.BuildErrorResponse("Password not match", "Validation Error")
 		return c.JSON(400, res)
 	}
 	
 	NewHashPassword := model.HashPasswordUpdate(changePasswordDTO.Password)
 
 	if err := db.Table(table.User()).Where("id_user", userChangePassword.IdUser).Update("password", NewHashPassword).Error; err != nil {
-		res := service.BuildErrorResponse("Failed to Change Password", shortcut.ValidationError())
+		res := service.BuildErrorResponse("Failed to Change Password", "Validation Error")
 		return c.JSON(400, res)
 	}
 
-	res := service.BuildResponseOnlyMessage(shortcut.SuccessfulyWithParam("Update Password"))
+	res := service.BuildResponseOnlyMessage("Successfully Update Password")
 	return c.JSON(200, res)
 }

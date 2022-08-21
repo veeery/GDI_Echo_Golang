@@ -9,7 +9,6 @@ import (
 	"gitlab.com/veeery/gdi_echo_golang.git/dto/auth"
 	"gitlab.com/veeery/gdi_echo_golang.git/model"
 	"gitlab.com/veeery/gdi_echo_golang.git/service"
-	"gitlab.com/veeery/gdi_echo_golang.git/shortcut"
 )
 
 func AuthMiddleware() echo.MiddlewareFunc {
@@ -26,7 +25,7 @@ func AuthMiddleware() echo.MiddlewareFunc {
 			splitToken := strings.TrimSpace(removeBearer)
 
 			if reqToken == "" {
-				res := service.BuildErrorResponse("Unauthorized",shortcut.UnAuthorization())
+				res := service.BuildErrorResponse("Unauthorized", "Request is Unauthorized")
 				return c.JSON(401, res)
 			}
 	
@@ -34,7 +33,7 @@ func AuthMiddleware() echo.MiddlewareFunc {
 			id, email ,err := model.ValidateToken(splitToken)
 	
 			if err != nil {
-				res := service.BuildErrorResponse(err.Error(), shortcut.ValidationError())
+				res := service.BuildErrorResponse(err.Error(), "Validation Error")
 				return c.JSON(401, res)
 			}
 
@@ -63,7 +62,7 @@ func DeleteAuth(c echo.Context, email string) error {
 	// fmt.Println(db.Where("email = ?", email).Take(&model.User{}).Delete(&model.User{}).Error)
 
 	if errDeleteAuth := db.Where("email = ?", email).Take(&model.User{}).Delete(&model.User{}).Error; errDeleteAuth != nil {
-		res := service.BuildErrorResponse(errDeleteAuth.Error(), shortcut.ValidationError())
+		res := service.BuildErrorResponse(errDeleteAuth.Error(), "Validation Error")
 		return c.JSON(400, res)
 	}
 	return nil
